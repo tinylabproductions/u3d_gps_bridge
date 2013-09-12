@@ -16,7 +16,31 @@ You are free to add more features :)
 
 1. Download https://github.com/tinylabproductions/u3d_gps_bridge/archive/master.zip.
 2. Extract contents of **csharp** directory into your Unity3D game.
-3. Use!
+3. Setup & use!
+
+## Setup
+
+Add your Google Play Game Services application ID to Android\Plugins\res\values\strings.xml
+
+It should like like this:
+
+	<?xml version="1.0" encoding="utf-8"?>
+	<resources>
+		<!-- Your APP_ID goes here -->
+		<string name="app_id">123456789012</string>
+	</resources>
+
+Also make sure to add these two directives in your AndroidManifest.xml under <application> tag.
+
+	<!-- Needed for GPGS to recognise your game -->
+	<meta-data android:name="com.google.android.gms.games.APP_ID"
+		android:value="@string/app_id" />
+
+	<!-- Needed for proper sign-in to GPGS -->
+	<activity android:label="@string/app_name" 
+		android:name="com.tinylabproductions.u3d_gps_bridge.CallbackActivity" />
+
+That's it!
 
 ## Usage
 
