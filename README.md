@@ -55,7 +55,11 @@ That's it!
           client.serviceStatus
         );
       else {
-        // Setup callbacks
+        // Setup callbacks.
+	//
+	// !!! Be sure to take a look at
+	// com.tinylabproductions.u3d_gps_bridge.ConnectionCallbacks class
+	// comments !!!
         client.callbacks.OnConnected += () => {};
         client.callbacks.OnDisconnected += () => {};
         client.callbacks.OnSignIn += () => {};
