@@ -14,7 +14,9 @@ You are free to add more features :)
 
 ## Installation
 
-TBD.
+1. Download https://github.com/tinylabproductions/u3d_gps_bridge/archive/master.zip.
+2. Extract contents of **csharp** directory into your Unity3D game.
+3. Use!
 
 ## Usage
 
