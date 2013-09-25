@@ -139,6 +139,12 @@ public class U3DGamesClient {
     client.submitScore(leaderboardId, score);
   }
 
+  public void unlockAchievement(String achievementId) {
+    Log.d(TAG, String.format("Unlocking achievement %s.", achievementId));
+    assertConnectivity();
+    client.unlockAchievement(achievementId);
+  }
+
   public boolean showLeaderboard(String leaderboardId) {
     if (!isConnected()) {
       Log.i(TAG, String.format(

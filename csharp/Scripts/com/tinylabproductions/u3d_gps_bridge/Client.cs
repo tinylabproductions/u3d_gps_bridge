@@ -41,6 +41,15 @@ namespace com.tinylabproductions.u3d_gps_bridge {
       client.Call("submitScore", leaderboardId, value);
     }
 
+    /** 
+     * Unlocks achievement asynchronously. If there's no network connectivity, 
+     * game services tries to resubmit this achievement later. You can treat this
+     * operation as always successful.
+     **/
+    public void unlockAchievement(string achievementId) {
+      client.Call("unlockAchievement", achievementId);
+    }
+
     /**
      * Returns true if activity for showing leaderboard has been started.
      * 
