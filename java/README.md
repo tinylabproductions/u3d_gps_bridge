@@ -25,8 +25,10 @@ The process looks like this:
 1. Create a new android project in this dir.
 2. Setup it with JDK6 and Android 2.3.3.
 3. Add libraries from **libs** folder as project libraries.
-4. Use menu item **Build > Build Artifacts > Build**.
-5. Copy created .jar to \csharp\Assets\Plugins\Android\
+4. Create an artifact with module dependencies extracted. Remove Unity3D player
+   from that jar.
+5. Use menu item **Build > Build Artifacts > Build**.
+6. Copy created .jar to \csharp\Assets\Plugins\Android\
 
 # Support
 

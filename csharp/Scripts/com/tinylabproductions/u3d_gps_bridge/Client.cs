@@ -51,6 +51,15 @@ namespace com.tinylabproductions.u3d_gps_bridge {
     }
 
     /**
+     * Returns true if activity for showing achievement has been started.
+     * 
+     * Otherwise games client tries to reconnect.
+     **/
+    public bool showAchievements() {
+      return client.Call<bool>("showAchievements");
+    }
+
+    /**
      * Returns true if activity for showing leaderboard has been started.
      * 
      * Otherwise games client tries to reconnect.

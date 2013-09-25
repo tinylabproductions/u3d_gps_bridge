@@ -16,6 +16,7 @@ public class U3DGamesClient {
 
   // An arbitrary integer that you define as the request code.
   private static final int REQUEST_LEADERBOARD = 0;
+  private static final int REQUEST_ACHIEVEMENTS = 1;
 
   private final int playServicesSupported;
   private final GamesClient client;
@@ -145,18 +146,29 @@ public class U3DGamesClient {
     client.unlockAchievement(achievementId);
   }
 
+  public boolean showAchievements() {
+    if (! tryConnectivity()) {
+      Log.i(TAG, String.format(
+        "Cannot show achievements because %s is not connected.",
+        GPGS
+      ));
+      return false;
+    }
+
+    Log.d(TAG, "Showing achievements.");
+    activity.startActivityForResult(
+      client.getAchievementsIntent(),
+      REQUEST_ACHIEVEMENTS
+    );
+    return true;
+  }
+
   public boolean showLeaderboard(String leaderboardId) {
-    if (!isConnected()) {
+    if (! tryConnectivity()) {
       Log.i(TAG, String.format(
         "Cannot show leaderboard %s, because %s is not connected.",
         leaderboardId, GPGS
       ));
-
-      if (client.isConnecting())
-        Log.d(TAG, "Client is currently connecting, not issuing connect.");
-      else
-        connect();
-
       return false;
     }
 
@@ -165,6 +177,15 @@ public class U3DGamesClient {
       client.getLeaderboardIntent(leaderboardId),
       REQUEST_LEADERBOARD
     );
+    return true;
+  }
+
+  private boolean tryConnectivity() {
+    if (! isConnected()) {
+      if (! client.isConnecting()) connect();
+      return false;
+    }
+
     return true;
   }
 
