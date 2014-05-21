@@ -5,9 +5,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.games.GamesClient;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.games.Games;
 import com.unity3d.player.UnityPlayer;
 
 public class U3DGamesClient {
@@ -19,29 +19,29 @@ public class U3DGamesClient {
   private static final int REQUEST_ACHIEVEMENTS = 1;
 
   private final int playServicesSupported;
-  private final GamesClient client;
+  private final GoogleApiClient client;
   private final Activity activity;
   public final ConnectionCallbacks connectionCallbacks;
   private final long id;
 
-  private final GooglePlayServicesClient.ConnectionCallbacks
-    gpscCallbacks = new GooglePlayServicesClient.ConnectionCallbacks() {
-    @Override
-    public void onConnected(Bundle bundle) {
-      Log.d(TAG, "Connected to " + GPGS + ".");
-      connectionCallbacks.onConnected();
-    }
+  private final GoogleApiClient.ConnectionCallbacks gpscCallbacks =
+    new GoogleApiClient.ConnectionCallbacks() {
+      @Override
+      public void onConnected(Bundle bundle) {
+        Log.d(TAG, "Connected to " + GPGS + ".");
+        connectionCallbacks.onConnected();
+      }
 
-    @Override
-    public void onDisconnected() {
-      Log.d(TAG, "Disconnected from " + GPGS + ".");
-      connectionCallbacks.onDisconnected();
-    }
-  };
+      @Override
+      public void onConnectionSuspended(int cause) {
+        Log.d(TAG, "Disconnected from " + GPGS + ": " + cause + ".");
+        connectionCallbacks.onDisconnected();
+      }
+    };
 
-  private final GooglePlayServicesClient.OnConnectionFailedListener
+  private final GoogleApiClient.OnConnectionFailedListener
     connectionFailedListener =
-    new GooglePlayServicesClient.OnConnectionFailedListener() {
+    new GoogleApiClient.OnConnectionFailedListener() {
       @Override
       public void onConnectionFailed(final ConnectionResult connectionResult) {
         switch (connectionResult.getErrorCode()) {
@@ -80,10 +80,11 @@ public class U3DGamesClient {
       GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
 
     if (playServicesSupported == ConnectionResult.SUCCESS) {
-      GamesClient.Builder builder = new GamesClient.Builder(
-        activity, gpscCallbacks, connectionFailedListener
-      );
-      client = builder.create();
+      GoogleApiClient.Builder builder = new GoogleApiClient.Builder(activity).
+        addApi(Games.API).addScope(Games.SCOPE_GAMES).
+        addConnectionCallbacks(gpscCallbacks).
+        addOnConnectionFailedListener(connectionFailedListener);
+      client = builder.build();
     } else {
       client = null;
     }
@@ -137,13 +138,13 @@ public class U3DGamesClient {
       "Submitting score %d to leaderboard %s", score, leaderboardId
     ));
     assertConnectivity();
-    client.submitScore(leaderboardId, score);
+    Games.Leaderboards.submitScore(client, leaderboardId, score);
   }
 
   public void unlockAchievement(String achievementId) {
     Log.d(TAG, String.format("Unlocking achievement %s.", achievementId));
     assertConnectivity();
-    client.unlockAchievement(achievementId);
+    Games.Achievements.unlock(client, achievementId);
   }
 
   public boolean showAchievements() {
@@ -157,7 +158,7 @@ public class U3DGamesClient {
 
     Log.d(TAG, "Showing achievements.");
     activity.startActivityForResult(
-      client.getAchievementsIntent(),
+      Games.Achievements.getAchievementsIntent(client),
       REQUEST_ACHIEVEMENTS
     );
     return true;
@@ -174,7 +175,7 @@ public class U3DGamesClient {
 
     Log.d(TAG, "Starting activity to show leaderboard " + leaderboardId);
     activity.startActivityForResult(
-      client.getLeaderboardIntent(leaderboardId),
+      Games.Leaderboards.getLeaderboardIntent(client, leaderboardId),
       REQUEST_LEADERBOARD
     );
     return true;
