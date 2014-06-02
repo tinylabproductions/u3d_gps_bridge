@@ -1,5 +1,4 @@
-﻿#if UNITY_ANDROID
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace com.tinylabproductions.u3d_gps_bridge {
@@ -66,4 +65,3 @@ namespace com.tinylabproductions.u3d_gps_bridge {
     }
   }
 }
-#endif
