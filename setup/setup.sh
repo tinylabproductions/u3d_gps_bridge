@@ -10,4 +10,6 @@ echo "Setting up $name."
 dirlink Assets/Vendor/U3D-GPS-Bridge
 rfilelink Assets/Plugins
 
+setup_gitignore
+
 echo "Done with $name."
