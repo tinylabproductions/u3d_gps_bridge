@@ -81,15 +81,17 @@ dirlink() {
 
   if [[ "$OS" == *Windows* ]]; then
     junction -d "$name"
-    # Really nice: process exits defore it has finished.
-    sleep 3
     test -e "$name" && {
       ls -la "$name"
       notif "Going to remove '$name'"
       rm -rfv "$name"
     }
 
-    junction "$name" "$ld/$name"
+    while [ -n "$(junction "$name" "$ld/$name" | grep "Error opening")" ]; do
+      echo "Directory $name is locked. Retrying in 1 second."
+      sleep 1
+      junction -d "$name"
+    done
   else
     if [ -e "$name" -o -h "$name" ]; then
       ls -la "$name"
