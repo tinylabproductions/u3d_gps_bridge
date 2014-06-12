@@ -5,18 +5,22 @@ Unity3D game.
 
 Currently supported features are:
 
-* Google Play Game Services
-** Connecting and signing in.
-** Submitting scores to leaderboards.
-** Showing leaderboards.
+* Connecting and signing in.
+* Submitting scores to leaderboards.
+* Showing leaderboards.
 
 You are free to add more features :)
 
 ## Installation
 
 1. Download https://github.com/tinylabproductions/u3d_gps_bridge/archive/master.zip.
-2. Extract contents of **csharp** directory into your Unity3D game.
+2. Extract contents of **Assets** directory into your Unity3D game.
 3. Setup & use!
+
+or if you're using msysgit and want files to be hardlinked:
+
+2. Extract whole archive to your_project/vendor/u3d_gps_bridge
+3. Run vendor/u3d_gps_bridge/setup/setup.sh from bash.
 
 ## Setup
 
