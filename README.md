@@ -24,25 +24,17 @@ or if you're using msysgit and want files to be hardlinked:
 
 ## Setup
 
-Add your Google Play Game Services application ID to Android\Plugins\res\values\strings.xml
-
-It should like like this:
-
-	<?xml version="1.0" encoding="utf-8"?>
-	<resources>
-		<!-- Your APP_ID goes here -->
-		<string name="app_id">123456789012</string>
-	</resources>
-
-Also make sure to add these two directives in your AndroidManifest.xml under <application> tag.
+Add your Google Play Game Services application ID to Plugins\Android\AndroidManifest.xml under <application> tag.
 
 	<!-- Needed for GPGS to recognise your game -->
 	<meta-data android:name="com.google.android.gms.games.APP_ID"
-		android:value="@string/app_id" />
+		android:value="\ 123456789012" />
 
 	<!-- Needed for proper sign-in to GPGS -->
 	<activity android:label="@string/app_name" 
 		android:name="com.tinylabproductions.u3d_gps_bridge.CallbackActivity" />
+
+Then add google-play-services_lib library project (you can get it from Android SDK manager) to Plugins\Android\
 
 That's it!
 
