@@ -8,7 +8,7 @@ name="Unity3D Google Play Services Bridge"
 echo "Setting up $name."
 
 dirlink Assets/Vendor/U3D-GPS-Bridge
-rfilelink Assets/Plugins
+dirlink Assets/Plugins/Android/u3d_gps_bridge_lib
 
 setup_gitignore
 
