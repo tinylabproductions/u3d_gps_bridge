@@ -4,10 +4,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 public class U3DGamesClient {
   public static final String TAG = "U3DGamesClient";
@@ -18,7 +23,7 @@ public class U3DGamesClient {
   private static final int REQUEST_ACHIEVEMENTS = 1;
 
   private final int playServicesSupported;
-  private final GoogleApiClient client;
+  private final GoogleSignInClient client;
   private final Activity activity;
   public final ConnectionCallbacks connectionCallbacks;
   private final long id;
@@ -38,39 +43,6 @@ public class U3DGamesClient {
       }
     };
 
-  private final GoogleApiClient.OnConnectionFailedListener
-    connectionFailedListener =
-    new GoogleApiClient.OnConnectionFailedListener() {
-      @Override
-      public void onConnectionFailed(final ConnectionResult connectionResult) {
-        switch (connectionResult.getErrorCode()) {
-          case ConnectionResult.NETWORK_ERROR:
-            Log.i(TAG, "Network error to " + GPGS + ". Reconnecting.");
-            client.reconnect();
-            break;
-          case ConnectionResult.SIGN_IN_REQUIRED:
-            Log.d(TAG, "Not signed in to " + GPGS + ". Signing in.");
-
-            StaticData.results.put(id, connectionResult);
-
-            Intent intent = new Intent(activity, CallbackActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-            intent.putExtra(StaticData.KEY, id);
-
-            Log.d(TAG, "Invoking Intent: " + intent);
-            activity.startActivity(intent);
-            break;
-          default:
-            Log.w(
-              TAG, "Connection to Google Play Game Services failed. Reason: " +
-              connectionResult
-            );
-            connectionCallbacks.
-              onConnectionFailed(connectionResult.getErrorCode());
-        }
-      }
-    };
-
   public U3DGamesClient(ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
     activity = (Activity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
     this.connectionCallbacks = connectionCallbacks;
@@ -79,11 +51,8 @@ public class U3DGamesClient {
       GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
 
     if (playServicesSupported == ConnectionResult.SUCCESS) {
-      GoogleApiClient.Builder builder = new GoogleApiClient.Builder(activity).
-        addApi(Games.API).addScope(Games.SCOPE_GAMES).
-        addConnectionCallbacks(gpscCallbacks).
-        addOnConnectionFailedListener(connectionFailedListener);
-      client = builder.build();
+      GoogleSignInOptions builder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+      client = GoogleSignIn.getClient(activity, builder);
     } else {
       client = null;
     }
@@ -94,17 +63,9 @@ public class U3DGamesClient {
 
   public void connect() {
     Log.d(TAG, "connect()");
-    client.connect();
-  }
-
-  public void reconnect() {
-    Log.d(TAG, "reconnect()");
-    client.reconnect();
-  }
-
-  public void disconnect() {
-    Log.d(TAG, "disconnect()");
-    client.disconnect();
+    Intent signInIntent = client.getSignInIntent();
+    // random id
+    activity.startActivityForResult(signInIntent, 7382642);
   }
 
   public boolean isSupported() {
@@ -129,7 +90,7 @@ public class U3DGamesClient {
   }
 
   public boolean isConnected() {
-    return client != null && client.isConnected();
+    return GoogleSignIn.getLastSignedInAccount(activity) != null;
   }
 
   public void submitScore(String leaderboardId, long score) {
@@ -137,13 +98,13 @@ public class U3DGamesClient {
       "Submitting score %d to leaderboard %s", score, leaderboardId
     ));
     assertConnectivity();
-    Games.Leaderboards.submitScore(client, leaderboardId, score);
+    Games.getLeaderboardsClient(activity, GoogleSignIn.getLastSignedInAccount(activity)).submitScore(leaderboardId, score);
   }
 
   public void unlockAchievement(String achievementId) {
     Log.d(TAG, String.format("Unlocking achievement %s.", achievementId));
     assertConnectivity();
-    Games.Achievements.unlock(client, achievementId);
+    Games.getAchievementsClient(activity, GoogleSignIn.getLastSignedInAccount(activity)).unlock(achievementId);
   }
 
   public boolean showAchievements() {
@@ -156,10 +117,15 @@ public class U3DGamesClient {
     }
 
     Log.d(TAG, "Showing achievements.");
-    activity.startActivityForResult(
-      Games.Achievements.getAchievementsIntent(client),
-      REQUEST_ACHIEVEMENTS
-    );
+
+    Games.getAchievementsClient(activity, GoogleSignIn.getLastSignedInAccount(activity))
+            .getAchievementsIntent()
+            .addOnSuccessListener(new OnSuccessListener<Intent>() {
+              @Override
+              public void onSuccess(Intent intent) {
+                activity.startActivityForResult(intent, 134234345);
+              }
+            });
     return true;
   }
 
@@ -173,16 +139,20 @@ public class U3DGamesClient {
     }
 
     Log.d(TAG, "Starting activity to show leaderboard " + leaderboardId);
-    activity.startActivityForResult(
-      Games.Leaderboards.getLeaderboardIntent(client, leaderboardId),
-      REQUEST_LEADERBOARD
-    );
+    Games.getLeaderboardsClient(activity, GoogleSignIn.getLastSignedInAccount(activity))
+            .getLeaderboardIntent(leaderboardId)
+            .addOnSuccessListener(new OnSuccessListener<Intent>() {
+              @Override
+              public void onSuccess(Intent intent) {
+                activity.startActivityForResult(intent, 134234345);
+              }
+            });
     return true;
   }
 
   private boolean tryConnectivity() {
     if (! isConnected()) {
-      if (! client.isConnecting()) connect();
+      connect();
       return false;
     }
 

@@ -39,8 +39,6 @@ namespace com.tinylabproductions.u3d_gps_bridge {
     } }
 
     public void connect() { if (onAndroid) client.Call("connect"); }
-    public void reconnect() { if (onAndroid) client.Call("reconnect"); }
-    public void disconnect() { if (onAndroid) client.Call("disconnect"); }
 
     public void submitScore(string leaderboardId, long value) {
       if (onAndroid) 
