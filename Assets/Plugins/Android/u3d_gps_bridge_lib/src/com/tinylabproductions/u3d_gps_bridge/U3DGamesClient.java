@@ -2,13 +2,15 @@ package com.tinylabproductions.u3d_gps_bridge;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.tasks.OnSuccessListener;
 
@@ -26,12 +28,27 @@ public class U3DGamesClient {
   public final ConnectionCallbacks connectionCallbacks;
   private final long id;
 
+  private final GoogleApiClient.ConnectionCallbacks gpscCallbacks =
+    new GoogleApiClient.ConnectionCallbacks() {
+      @Override
+      public void onConnected(Bundle bundle) {
+        Log.d(TAG, "Connected to " + GPGS + ".");
+        connectionCallbacks.onConnected();
+      }
+
+      @Override
+      public void onConnectionSuspended(int cause) {
+        Log.d(TAG, "Disconnected from " + GPGS + ": " + cause + ".");
+        connectionCallbacks.onDisconnected();
+      }
+    };
+
   public U3DGamesClient(ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
     activity = (Activity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
     this.connectionCallbacks = connectionCallbacks;
 
     playServicesSupported =
-      GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity);
+      GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
 
     if (playServicesSupported == ConnectionResult.SUCCESS) {
       GoogleSignInOptions builder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
@@ -47,7 +64,8 @@ public class U3DGamesClient {
   public void connect() {
     Log.d(TAG, "connect()");
     Intent signInIntent = client.getSignInIntent();
-    activity.startActivity(signInIntent);
+    // random id
+    activity.startActivityForResult(signInIntent, 7382642);
   }
 
   public boolean isSupported() {
@@ -105,7 +123,7 @@ public class U3DGamesClient {
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
               @Override
               public void onSuccess(Intent intent) {
-                activity.startActivity(intent);
+                activity.startActivityForResult(intent, 134234345);
               }
             });
     return true;
@@ -126,7 +144,7 @@ public class U3DGamesClient {
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
               @Override
               public void onSuccess(Intent intent) {
-                activity.startActivity(intent);
+                activity.startActivityForResult(intent, 134234345);
               }
             });
     return true;
