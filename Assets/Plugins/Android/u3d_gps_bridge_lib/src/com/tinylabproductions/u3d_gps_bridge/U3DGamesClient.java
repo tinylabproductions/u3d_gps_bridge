@@ -1,6 +1,9 @@
 package com.tinylabproductions.u3d_gps_bridge;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.auth.api.Auth;
@@ -14,9 +17,11 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.games.Games;
-import com.google.android.gms.games.GamesActivityResultCodes;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.tinylabproductions.tlplib.ActivityResultTracker;
+import com.tinylabproductions.tlplib.IActivityWithResultTracker;
 import com.tinylabproductions.tlplib.UnityActivity;
 
 public class U3DGamesClient {
@@ -25,15 +30,18 @@ public class U3DGamesClient {
 
   private final int playServicesSupported;
   private final GoogleSignInClient client;
-  private final UnityActivity activity;
+  private final Activity activity;
   public final ConnectionCallbacks connectionCallbacks;
   private final int signInCode, achievementsCode, leaderboardCode;
+  private final ActivityResultTracker tracker;
+  private Boolean checkedConnectionOnce = false;
 
   public U3DGamesClient(final ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-    activity = (UnityActivity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
-    signInCode = activity.generateRequestCode();
-    achievementsCode = activity.generateRequestCode();
-    leaderboardCode = activity.generateRequestCode();
+    activity = (Activity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
+    tracker = ((IActivityWithResultTracker) activity).getTracker();
+    signInCode = tracker.generateRequestCode();
+    achievementsCode = tracker.generateRequestCode();
+    leaderboardCode = tracker.generateRequestCode();
     this.connectionCallbacks = connectionCallbacks;
 
     playServicesSupported =
@@ -46,28 +54,35 @@ public class U3DGamesClient {
       client = null;
     }
 
-    activity.subscribeOnActivityResult(new UnityActivity.IActivityResult() {
+    tracker.subscribeOnActivityResult(new UnityActivity.IActivityResult() {
       @Override
       public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == signInCode) {
-          // https://stackoverflow.com/questions/35008490/android-google-plus-sign-in-issue-handlesigninresult-returns-false
           GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-          int statusCode = result.getStatus().getStatusCode();
-          if (statusCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
-            connectionCallbacks.onSignInCanceled();
+
+          int code = result.getStatus().getStatusCode();
+
+          Log.d(TAG, "GoogleSignInStatusCodes " + code);
+          if (result.isSuccess()) {
+            connectionCallbacks.onSignIn();
           } else {
-            //https://developers.google.com/identity/sign-in/android/
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
+            if (code == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
+              connectionCallbacks.onSignInCanceled();
+            } else {
+              String message = result.getStatus().getStatusMessage();
+              if (message == null || message.isEmpty()) {
+                message = "Google Sign-in failed";
+              }
+              new AlertDialog.Builder(activity).setMessage(message)
+                      .setNeutralButton(android.R.string.ok, null).show();
+
+              connectionCallbacks.onSignInFailed();
+            }
           }
         } else if (requestCode == achievementsCode || requestCode == leaderboardCode) {
-          switch (requestCode) {
-            case GamesActivityResultCodes.RESULT_RECONNECT_REQUIRED:
-              connectionCallbacks.onDisconnected();
-              break;
-            case GamesActivityResultCodes.RESULT_NETWORK_FAILURE:
-              connectionCallbacks.onNetworkFailure();
-              break;
+          Log.d(TAG, "GamesActivityResultCodes " + resultCode);
+          if (GoogleSignIn.getLastSignedInAccount(activity) == null) {
+            connectionCallbacks.onDisconnected();
           }
         }
       }
@@ -89,9 +104,28 @@ public class U3DGamesClient {
 
   public void connect() {
     Log.d(TAG, "connect()");
-    Intent signInIntent = client.getSignInIntent();
-    // random id
-    activity.startActivityForResult(signInIntent, signInCode);
+    signInSilently();
+  }
+
+  // https://developers.google.com/games/services/android/signin
+  private void signInSilently() {
+    GoogleSignInClient signInClient = GoogleSignIn.getClient(activity, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+    signInClient.silentSignIn().addOnCompleteListener(activity,
+            new OnCompleteListener<GoogleSignInAccount>() {
+              @Override
+              public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
+                Log.d(TAG, "signInSilently successful " + task.isSuccessful());
+                if (task.isSuccessful()) {
+                  // The signed in account is stored in the task's result.
+                  GoogleSignInAccount signedInAccount = task.getResult();
+                  connectionCallbacks.onSignIn();
+                } else {
+                  // Player will need to sign-in explicitly using via UI
+                  Intent signInIntent = client.getSignInIntent();
+                  activity.startActivityForResult(signInIntent, signInCode);
+                }
+              }
+            });
   }
 
   public boolean isSupported() {
@@ -116,7 +150,12 @@ public class U3DGamesClient {
   }
 
   public boolean isConnected() {
-    return GoogleSignIn.getLastSignedInAccount(activity) != null;
+    Boolean result = GoogleSignIn.getLastSignedInAccount(activity) != null;
+    if (!checkedConnectionOnce) {
+      checkedConnectionOnce = true;
+      if (result) connectionCallbacks.onSignIn();
+    }
+    return result;
   }
 
   public void submitScore(String leaderboardId, long score) {
