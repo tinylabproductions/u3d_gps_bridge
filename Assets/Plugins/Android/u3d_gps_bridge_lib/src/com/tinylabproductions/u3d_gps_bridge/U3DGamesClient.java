@@ -1,50 +1,39 @@
 package com.tinylabproductions.u3d_gps_bridge;
 
-import android.app.Activity;
 import android.content.Intent;
-import android.os.Bundle;
 import android.util.Log;
 
+import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesActivityResultCodes;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.tinylabproductions.tlplib.UnityActivity;
 
 public class U3DGamesClient {
   public static final String TAG = "U3DGamesClient";
   public static final String GPGS = "Google Play Game Services";
 
-  // An arbitrary integer that you define as the request code.
-  private static final int REQUEST_LEADERBOARD = 0;
-  private static final int REQUEST_ACHIEVEMENTS = 1;
-
   private final int playServicesSupported;
   private final GoogleSignInClient client;
-  private final Activity activity;
+  private final UnityActivity activity;
   public final ConnectionCallbacks connectionCallbacks;
-  private final long id;
+  private final int signInCode, achievementsCode, leaderboardCode;
 
-  private final GoogleApiClient.ConnectionCallbacks gpscCallbacks =
-    new GoogleApiClient.ConnectionCallbacks() {
-      @Override
-      public void onConnected(Bundle bundle) {
-        Log.d(TAG, "Connected to " + GPGS + ".");
-        connectionCallbacks.onConnected();
-      }
-
-      @Override
-      public void onConnectionSuspended(int cause) {
-        Log.d(TAG, "Disconnected from " + GPGS + ": " + cause + ".");
-        connectionCallbacks.onDisconnected();
-      }
-    };
-
-  public U3DGamesClient(ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
-    activity = (Activity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
+  public U3DGamesClient(final ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+    activity = (UnityActivity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
+    signInCode = activity.generateRequestCode();
+    achievementsCode = activity.generateRequestCode();
+    leaderboardCode = activity.generateRequestCode();
     this.connectionCallbacks = connectionCallbacks;
 
     playServicesSupported =
@@ -57,15 +46,52 @@ public class U3DGamesClient {
       client = null;
     }
 
-    id = System.currentTimeMillis();
-    StaticData.clients.put(id, this);
+    activity.subscribeOnActivityResult(new UnityActivity.IActivityResult() {
+      @Override
+      public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == signInCode) {
+          // https://stackoverflow.com/questions/35008490/android-google-plus-sign-in-issue-handlesigninresult-returns-false
+          GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+          int statusCode = result.getStatus().getStatusCode();
+          if (statusCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
+            connectionCallbacks.onSignInCanceled();
+          } else {
+            //https://developers.google.com/identity/sign-in/android/
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+          }
+        } else if (requestCode == achievementsCode || requestCode == leaderboardCode) {
+          switch (requestCode) {
+            case GamesActivityResultCodes.RESULT_RECONNECT_REQUIRED:
+              connectionCallbacks.onDisconnected();
+              break;
+            case GamesActivityResultCodes.RESULT_NETWORK_FAILURE:
+              connectionCallbacks.onNetworkFailure();
+              break;
+          }
+        }
+      }
+    });
+  }
+
+  private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+    try {
+      GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+      // Signed in successfully
+      connectionCallbacks.onSignIn();
+    } catch (ApiException e) {
+      // The ApiException status code indicates the detailed failure reason.
+      // Please refer to the GoogleSignInStatusCodes class reference for more information.
+      Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+      connectionCallbacks.onSignInFailed();
+    }
   }
 
   public void connect() {
     Log.d(TAG, "connect()");
     Intent signInIntent = client.getSignInIntent();
     // random id
-    activity.startActivityForResult(signInIntent, 7382642);
+    activity.startActivityForResult(signInIntent, signInCode);
   }
 
   public boolean isSupported() {
@@ -123,7 +149,7 @@ public class U3DGamesClient {
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
               @Override
               public void onSuccess(Intent intent) {
-                activity.startActivityForResult(intent, 134234345);
+                activity.startActivityForResult(intent, achievementsCode);
               }
             });
     return true;
@@ -144,7 +170,7 @@ public class U3DGamesClient {
             .addOnSuccessListener(new OnSuccessListener<Intent>() {
               @Override
               public void onSuccess(Intent intent) {
-                activity.startActivityForResult(intent, 134234345);
+                activity.startActivityForResult(intent, leaderboardCode);
               }
             });
     return true;

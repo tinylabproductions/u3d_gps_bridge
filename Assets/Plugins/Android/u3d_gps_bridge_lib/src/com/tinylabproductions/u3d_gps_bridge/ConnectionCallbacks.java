@@ -1,7 +1,7 @@
 package com.tinylabproductions.u3d_gps_bridge;
 
 public interface ConnectionCallbacks {
-  public void onConnected();
+  public void onNetworkFailure();
 
   public void onDisconnected();
 
@@ -9,5 +9,5 @@ public interface ConnectionCallbacks {
 
   public void onSignInFailed();
 
-  public void onConnectionFailed(int errorCode);
+  public void onSignInCanceled();
 }

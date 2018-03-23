@@ -33,37 +33,23 @@ namespace com.tinylabproductions.u3d_gps_bridge {
     base("com.tinylabproductions.u3d_gps_bridge.ConnectionCallbacks")
     {}
 
-    // Called when client connects to google play services.
-    public Action OnConnected = delegate {};
+    public enum SignInResult { Success, Fail, Cancel }
+
+    public Action OnNetworkFailure = delegate {};
 
     // Called when client disconnects from google play services.
     public Action OnDisconnected = delegate {};
 
-    /**
-     * Called when user signs in to google play services (after connection).
-     * 
-     * Usually you want to connect again after sign-in:
-     * 
-     *   client.callbacks.OnSignIn += client.connect;
-     **/
-    public Action OnSignIn = delegate {};
+    public Action<SignInResult> OnSignIn = delegate {};
 
-    // Called when user sign in to google play services fails (after connection).
-    public Action OnSignInFailed = delegate {};
-
-    // Called when connection to google play services fails.
-    // Params: errorCode - possible values at http://developer.android.com/reference/com/google/android/gms/common/ConnectionResult.html
-    public Action<int> OnConnectionFailed = delegate {};
 
     /** Java interface methods **/
 
-    void onConnected() { OnConnected.Invoke(); }
+    void onNetworkFailure() { OnNetworkFailure.Invoke(); }
     void onDisconnected() { OnDisconnected.Invoke(); }
-    void onSignIn() { OnSignIn.Invoke(); }
-    void onSignInFailed() { OnSignInFailed.Invoke(); }
-    void onConnectionFailed(int errorCode) {
-      OnConnectionFailed.Invoke(errorCode);
-    }
+    void onSignIn() { OnSignIn.Invoke(SignInResult.Success); }
+    void onSignInFailed() { OnSignIn.Invoke(SignInResult.Fail); }
+    void onSignInCanceled() { OnSignIn.Invoke(SignInResult.Cancel); }
   }
 }
 #endif
