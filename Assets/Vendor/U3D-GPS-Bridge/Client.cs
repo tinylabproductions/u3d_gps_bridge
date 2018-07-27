@@ -1,4 +1,5 @@
-﻿#if UNITY_ANDROID
+﻿#if PART_U3D_GPS_BRIDGE
+#if UNITY_ANDROID
 using System;
 using UnityEngine;
 
@@ -89,4 +90,5 @@ namespace com.tinylabproductions.u3d_gps_bridge {
       { get { return Application.platform == RuntimePlatform.Android; } }
   }
 }
+#endif
 #endif
