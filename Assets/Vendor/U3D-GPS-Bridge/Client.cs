@@ -8,14 +8,13 @@ namespace com.tinylabproductions.u3d_gps_bridge {
    * Unity 3D Google Game Play Services (GGPS) Android client.
    **/
   public class Client {
-    public enum ServiceStatus {
+    public enum ServiceStatus : byte {
       Supported, Missing, VersionUpdateRequired, Disabled, Invalid
     }
 
     public readonly ServiceStatus serviceStatus;
     public readonly ConnectionCallbacks callbacks;
-
-    private readonly AndroidJavaObject client;
+    readonly AndroidJavaObject client;
 
     public Client() {
       if (onAndroid) {
@@ -33,11 +32,8 @@ namespace com.tinylabproductions.u3d_gps_bridge {
       }
     }
 
-    public bool connected { get { return onAndroid && client.Call<bool>("isConnected"); } }
-
-    public bool supported { get {
-      return serviceStatus == ServiceStatus.Supported;
-    } }
+    public bool connected => onAndroid && client.Call<bool>("isConnected");
+    public bool supported => serviceStatus == ServiceStatus.Supported;
 
     public void connect() { if (onAndroid) client.Call("connect"); }
 
@@ -61,33 +57,28 @@ namespace com.tinylabproductions.u3d_gps_bridge {
      * 
      * Otherwise games client tries to reconnect.
      **/
-    public bool showAchievements() {
-      return onAndroid && client.Call<bool>("showAchievements");
-    }
+    public bool showAchievements() => onAndroid && client.Call<bool>("showAchievements");
 
     /**
      * Returns true if activity for showing leaderboard has been started.
      * 
      * Otherwise games client tries to reconnect.
      **/
-    public bool showLeaderboard(string leaderboardId) {
-      return onAndroid && client.Call<bool>("showLeaderboard", leaderboardId);
-    }
+    public bool showLeaderboard(string leaderboardId) =>
+      onAndroid && client.Call<bool>("showLeaderboard", leaderboardId);
 
     // Is GGPS supported on this device?
-    private ServiceStatus getServiceStatus() {
+    ServiceStatus getServiceStatus() {
       if (client.Call<bool>("isSupported")) return ServiceStatus.Supported;
       if (client.Call<bool>("isServiceMissing")) return ServiceStatus.Missing;
-      if (client.Call<bool>("isServiceVersionUpdateRequired"))
-        return ServiceStatus.VersionUpdateRequired;
+      if (client.Call<bool>("isServiceVersionUpdateRequired")) return ServiceStatus.VersionUpdateRequired;
       if (client.Call<bool>("isServiceDisabled")) return ServiceStatus.Disabled;
       if (client.Call<bool>("isServiceInvalid")) return ServiceStatus.Invalid;
 
       throw new Exception("Internal library error: unknown GGPS status!");
     }
 
-    private static bool onAndroid 
-      { get { return Application.platform == RuntimePlatform.Android; } }
+    static bool onAndroid => Application.platform == RuntimePlatform.Android;
   }
 }
 #endif
