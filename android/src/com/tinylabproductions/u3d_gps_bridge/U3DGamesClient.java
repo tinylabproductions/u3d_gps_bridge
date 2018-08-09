@@ -14,7 +14,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -45,10 +45,14 @@ public class U3DGamesClient {
     this.connectionCallbacks = connectionCallbacks;
 
     playServicesSupported =
-      GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
+      GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity);
 
     if (playServicesSupported == ConnectionResult.SUCCESS) {
-      GoogleSignInOptions builder = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+      GoogleSignInOptions builder = new GoogleSignInOptions
+        .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestScopes(Games.SCOPE_GAMES_LITE)
+        .requestEmail()
+        .build();
       client = GoogleSignIn.getClient(activity, builder);
     } else {
       client = null;
