@@ -6,10 +6,9 @@ using com.tinylabproductions.TLPLib.Data;
 using com.tinylabproductions.TLPLib.Functional;
 using com.tinylabproductions.TLPLib.Logger;
 using com.tinylabproductions.TLPLib.Reactive;
-using com.tinylabproductions.u3d_gps_bridge;
 using UnityEngine;
 
-namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
+namespace com.tinylabproductions.TLPGame.Plugins.u3d_gps_bridge {
   public class GpsBindingAndroid : IGpsBinding {
     public static readonly IGpsBinding instance = new GpsBindingAndroid();
 

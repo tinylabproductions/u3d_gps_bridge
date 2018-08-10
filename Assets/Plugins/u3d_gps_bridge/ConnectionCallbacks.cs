@@ -3,7 +3,7 @@
 using System;
 using UnityEngine;
 
-namespace com.tinylabproductions.u3d_gps_bridge {
+namespace com.tinylabproductions.TLPGame.Plugins.u3d_gps_bridge {
   /**
    * Connection callbacks class.
    * 
