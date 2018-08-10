@@ -1,3 +1,3 @@
 #!/bin/bash
 
-dirlink Assets/Plugins/u3d_gps_bridge
+dirlink Assets/Plugins/Vendor/TLPGame/u3d_gps_bridge
