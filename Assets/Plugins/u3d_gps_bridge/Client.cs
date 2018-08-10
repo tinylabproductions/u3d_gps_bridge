@@ -3,7 +3,7 @@
 using System;
 using UnityEngine;
 
-namespace com.tinylabproductions.TLPGame.Plugins.u3d_gps_bridge {
+namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   /**
    * Unity 3D Google Game Play Services (GGPS) Android client.
    **/

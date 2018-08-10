@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace com.tinylabproductions.TLPGame.Plugins.u3d_gps_bridge {
+namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   public interface IGpsBinding {
     void submitScore(LeaderboardId id, float score);
     void showLeaderboard(LeaderboardId id);

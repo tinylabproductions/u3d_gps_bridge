@@ -4,7 +4,7 @@ using GenerationAttributes;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace com.tinylabproductions.TLPGame.Plugins.u3d_gps_bridge {
+namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   [Serializable] public partial struct AchievementId : IStr  {
     #region Unity Serialized Fields
 
