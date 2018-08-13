@@ -3,9 +3,7 @@
 using System;
 using com.tinylabproductions.TLPLib.Concurrent;
 using com.tinylabproductions.TLPLib.Data;
-using com.tinylabproductions.TLPLib.Functional;
 using com.tinylabproductions.TLPLib.Logger;
-using com.tinylabproductions.TLPLib.Reactive;
 using UnityEngine;
 
 namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
@@ -16,7 +14,6 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     // It could only be enabled when user takes action which needs GPS. For example to view leaderboards or achievements.
     readonly PrefVal<bool> silentSignInEnabled = PrefVal.player.boolean("silent_sign_in_enabled", false);
     public readonly Future<ConnectionCallbacks.SignInResult> onSignIn;
-    public readonly Subject<Unit> onNetworkFailure = new Subject<Unit>();
     readonly Client client = new Client();
 
     GpsBindingAndroid() {
@@ -30,7 +27,6 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       });
       if (Application.platform == RuntimePlatform.Android) {
         client.callbacks.OnDisconnected += () => ASync.OnMainThread(() => silentSignInEnabled.value = false);
-        client.callbacks.OnNetworkFailure += () => ASync.OnMainThread(() => onNetworkFailure.push(F.unit));
       }
       if (!client.supported) return;
       if (silentSignInEnabled.value) client.connect();
@@ -50,8 +46,7 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     void userAction(Action act) {
       if (client.connected) act();
       else {
-        silentSignInEnabled.value = true;
-        if (!client.connected) client.connect();
+        client.connect();
 
         void onSignIn(ConnectionCallbacks.SignInResult result) {
           if (result == ConnectionCallbacks.SignInResult.Success) act();

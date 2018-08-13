@@ -12,12 +12,12 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       Supported, Missing, VersionUpdateRequired, Disabled, Invalid
     }
 
-    public readonly ServiceStatus serviceStatus;
     public readonly ConnectionCallbacks callbacks;
+    readonly ServiceStatus serviceStatus;
     readonly AndroidJavaObject client;
 
     public Client() {
-      if (onAndroid) {
+      if (onAndroidPlatform) {
         callbacks = new ConnectionCallbacks();
         client = new AndroidJavaObject(
           "com.tinylabproductions.u3d_gps_bridge.U3DGamesClient",
@@ -32,40 +32,26 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       }
     }
 
-    public bool connected => onAndroid && client.Call<bool>("isConnected");
+    public bool connected => onAndroidPlatform && client.Call<bool>("isConnected");
     public bool supported => serviceStatus == ServiceStatus.Supported;
 
-    public void connect() { if (onAndroid) client.Call("connect"); }
+    public void connect() => onAndroid(() => client.Call("connect"));
 
-    public void submitScore(string leaderboardId, long value) {
-      if (onAndroid) 
-        client.Call("submitScore", leaderboardId, value);
-    }
+    public void submitScore(string leaderboardId, long value) =>
+      onAndroid(() => client.Call("submitScore", leaderboardId, value));
 
     /** 
      * Unlocks achievement asynchronously. If there's no network connectivity, 
      * game services tries to resubmit this achievement later. You can treat this
-     * operation as always successful.
+     * operation as always successful. ??????????????????????????????????????????
      **/
-    public void unlockAchievement(string achievementId) {
-      if (onAndroid) 
-        client.Call("unlockAchievement", achievementId);
-    }
+    public void unlockAchievement(string achievementId) =>
+      onAndroid(() => client.Call("unlockAchievement", achievementId));
 
-    /**
-     * Returns true if activity for showing achievement has been started.
-     * 
-     * Otherwise games client tries to reconnect.
-     **/
-    public bool showAchievements() => onAndroid && client.Call<bool>("showAchievements");
+    public void showAchievements() => onAndroid(() => client.Call("showAchievements"));
 
-    /**
-     * Returns true if activity for showing leaderboard has been started.
-     * 
-     * Otherwise games client tries to reconnect.
-     **/
-    public bool showLeaderboard(string leaderboardId) =>
-      onAndroid && client.Call<bool>("showLeaderboard", leaderboardId);
+    public void showLeaderboard(string leaderboardId) =>
+      onAndroid(() => client.Call("showLeaderboard", leaderboardId));
 
     // Is GGPS supported on this device?
     ServiceStatus getServiceStatus() {
@@ -78,7 +64,8 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       throw new Exception("Internal library error: unknown GGPS status!");
     }
 
-    static bool onAndroid => Application.platform == RuntimePlatform.Android;
+    static void onAndroid(Action action) { if (onAndroidPlatform) action(); }
+    static bool onAndroidPlatform => Application.platform == RuntimePlatform.Android;
   }
 }
 #endif

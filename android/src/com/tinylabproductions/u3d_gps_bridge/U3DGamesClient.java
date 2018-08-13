@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.util.Log;
-
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -22,7 +20,10 @@ import com.google.android.gms.tasks.Task;
 import com.tinylabproductions.tlplib.ActivityResultTracker;
 import com.tinylabproductions.tlplib.IActivityWithResultTracker;
 import com.tinylabproductions.tlplib.UnityActivity;
+import com.tinylabproductions.tlplib.logging.Log;
+import java.util.Locale;
 
+@SuppressWarnings("unused")
 public class U3DGamesClient {
   private static final String TAG = "U3DGamesClient";
   private static final String GPGS = "Google Play Game Services";
@@ -32,7 +33,6 @@ public class U3DGamesClient {
   private final Activity activity;
   private final ConnectionCallbacks connectionCallbacks;
   private final int signInCode, achievementsCode, leaderboardCode;
-  private Boolean checkedConnectionOnce = false;
 
   public U3DGamesClient(final ConnectionCallbacks connectionCallbacks)
     throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException
@@ -67,7 +67,13 @@ public class U3DGamesClient {
 
           int code = result.getStatus().getStatusCode();
 
-          Log.d(TAG, "GoogleSignInStatusCodes " + code);
+          Log.log(
+            Log.DEBUG,
+            TAG,
+            "GoogleSignInStatusCodes: " +
+              GoogleSignInStatusCodes.getStatusCodeString(code) + " == " + code
+          );
+
           if (result.isSuccess()) {
             setViewForPopups(result.getSignInAccount());
             connectionCallbacks.onSignIn();
@@ -86,7 +92,7 @@ public class U3DGamesClient {
             }
           }
         } else if (requestCode == achievementsCode || requestCode == leaderboardCode) {
-          Log.d(TAG, "GamesActivityResultCodes " + resultCode);
+          Log.log(Log.DEBUG, TAG, "GamesActivityResultCodes " + resultCode);
           if (GoogleSignIn.getLastSignedInAccount(activity) == null) {
             connectionCallbacks.onDisconnected();
           }
@@ -96,14 +102,18 @@ public class U3DGamesClient {
   }
 
   public void connect() {
-    Log.d(TAG, "connect()");
+    Log.log(Log.DEBUG, TAG, "connect()");
     signInSilently();
   }
 
   private void setViewForPopups(GoogleSignInAccount signInAccount) {
-    Games
-      .getGamesClient(activity, signInAccount)
-      .setViewForPopups(activity.findViewById(android.R.id.content));
+    try {
+      Games
+        .getGamesClient(activity, signInAccount)
+        .setViewForPopups(activity.findViewById(android.R.id.content));
+    } catch (Exception e) {
+      Log.log(Log.ERROR, TAG, e.getMessage());
+    }
   }
 
   // https://developers.google.com/games/services/android/signin
@@ -115,7 +125,7 @@ public class U3DGamesClient {
       new OnCompleteListener<GoogleSignInAccount>() {
         @Override
         public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
-          Log.d(TAG, "signInSilently successful " + task.isSuccessful());
+          Log.log(Log.DEBUG, TAG, "signInSilently successful " + task.isSuccessful());
           if (task.isSuccessful()) {
             // The signed in account is stored in the task's result.
             GoogleSignInAccount signedInAccount = task.getResult();
@@ -139,8 +149,7 @@ public class U3DGamesClient {
   }
 
   public boolean isServiceVersionUpdateRequired() {
-    return playServicesSupported ==
-      ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED;
+    return playServicesSupported == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED;
   }
 
   public boolean isServiceDisabled() {
@@ -152,84 +161,75 @@ public class U3DGamesClient {
   }
 
   public boolean isConnected() {
-    Boolean result = GoogleSignIn.getLastSignedInAccount(activity) != null;
-    if (!checkedConnectionOnce) {
-      checkedConnectionOnce = true;
-      if (result) connectionCallbacks.onSignIn();
-    }
-    return result;
+    return GoogleSignIn.getLastSignedInAccount(activity) != null;
   }
 
-  public void submitScore(String leaderboardId, long score) {
-    Log.d(TAG, String.format(
-      "Submitting score %d to leaderboard %s", score, leaderboardId
-    ));
-    assertConnectivity();
-    Games.getLeaderboardsClient(activity, GoogleSignIn.getLastSignedInAccount(activity)).submitScore(leaderboardId, score);
+  interface Action { void lastSignedId(GoogleSignInAccount account); }
+
+  private void withLastSignedIn(Action action) {
+    GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(activity);
+    if (account != null) action.lastSignedId(account);
   }
 
-  public void unlockAchievement(String achievementId) {
-    Log.d(TAG, String.format("Unlocking achievement %s.", achievementId));
-    assertConnectivity();
-    Games.getAchievementsClient(activity, GoogleSignIn.getLastSignedInAccount(activity)).unlock(achievementId);
+  public void submitScore(final String leaderboardId, final long score) {
+    Log.log(Log.DEBUG, TAG,
+      String.format(
+        Locale.ENGLISH, "Submitting score %d to leaderboard %s", score, leaderboardId
+      )
+    );
+
+    withLastSignedIn(new Action() {
+      @Override
+      public void lastSignedId(GoogleSignInAccount account) {
+        Games.getLeaderboardsClient(activity, account).submitScore(leaderboardId, score);
+      }
+    });
   }
 
-  public boolean showAchievements() {
-    if (! tryConnectivity()) {
-      Log.i(TAG, String.format(
-        "Cannot show achievements because %s is not connected.",
-        GPGS
-      ));
-      return false;
-    }
+  public void unlockAchievement(final String achievementId) {
+    Log.log(Log.DEBUG, TAG, String.format("Unlocking achievement %s.", achievementId));
 
-    Log.d(TAG, "Showing achievements.");
-
-    Games.getAchievementsClient(activity, GoogleSignIn.getLastSignedInAccount(activity))
-            .getAchievementsIntent()
-            .addOnSuccessListener(new OnSuccessListener<Intent>() {
-              @Override
-              public void onSuccess(Intent intent) {
-                activity.startActivityForResult(intent, achievementsCode);
-              }
-            });
-    return true;
+    withLastSignedIn(new Action() {
+      @Override
+      public void lastSignedId(GoogleSignInAccount account) {
+        Games.getAchievementsClient(activity, account).unlock(achievementId);
+      }
+    });
   }
 
-  public boolean showLeaderboard(String leaderboardId) {
-    if (! tryConnectivity()) {
-      Log.i(TAG, String.format(
-        "Cannot show leaderboard %s, because %s is not connected.",
-        leaderboardId, GPGS
-      ));
-      return false;
-    }
+  public void showAchievements() {
+    Log.log(Log.DEBUG, TAG, "Showing achievements.");
 
-    Log.d(TAG, "Starting activity to show leaderboard " + leaderboardId);
-    Games.getLeaderboardsClient(activity, GoogleSignIn.getLastSignedInAccount(activity))
-            .getLeaderboardIntent(leaderboardId)
-            .addOnSuccessListener(new OnSuccessListener<Intent>() {
-              @Override
-              public void onSuccess(Intent intent) {
-                activity.startActivityForResult(intent, leaderboardCode);
-              }
-            });
-    return true;
+    withLastSignedIn(new Action() {
+      @Override
+      public void lastSignedId(GoogleSignInAccount account) {
+        Games.getAchievementsClient(activity, account)
+          .getAchievementsIntent()
+          .addOnSuccessListener(new OnSuccessListener<Intent>() {
+            @Override
+            public void onSuccess(Intent intent) {
+              activity.startActivityForResult(intent, achievementsCode);
+            }
+          });
+      }
+    });
   }
 
-  private boolean tryConnectivity() {
-    if (! isConnected()) {
-      connect();
-      return false;
-    }
+  public void showLeaderboard(final String leaderboardId) {
+    Log.log(Log.DEBUG, TAG, "Starting activity to show leaderboard " + leaderboardId);
 
-    return true;
-  }
-
-  private void assertConnectivity() {
-    if (!isConnected())
-      throw new IllegalStateException(
-        "You need to be connected to perform this operation!"
-      );
+    withLastSignedIn(new Action() {
+      @Override
+      public void lastSignedId(GoogleSignInAccount account) {
+        Games.getLeaderboardsClient(activity, account)
+          .getLeaderboardIntent(leaderboardId)
+          .addOnSuccessListener(new OnSuccessListener<Intent>() {
+            @Override
+            public void onSuccess(Intent intent) {
+              activity.startActivityForResult(intent, leaderboardCode);
+            }
+          });
+      }
+    });
   }
 }
