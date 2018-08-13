@@ -42,14 +42,19 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
 
     public override Either<ImmutableList<string>, IAppPartBuildDataValidated> validate(
       AppPartBuildDataValidationArgs args
-    ) => new U3dGpsBridgeBuildDataValidated(_clientId.Trim());
+    ) =>
+      AppPartBuildData
+      .validateKey(_clientId, nameof(_clientId), args.releaseMode)
+      .asEnum()
+      .ToImmutableList()
+      .asValidationErrors(() => (IAppPartBuildDataValidated) new U3dGpsBridgeBuildDataValidated(_clientId));
   }
 
   [Record]
   public partial class U3dGpsBridgeBuildDataValidated : IAppPartBuildDataValidated,
     IPreGradleifyAddFileContentReplacements
   {
-    public readonly string clientId;
+    readonly string clientId;
 
     public AppPartType dataFor => U3dGpsBridgeBuildData.DATA_FOR;
 
