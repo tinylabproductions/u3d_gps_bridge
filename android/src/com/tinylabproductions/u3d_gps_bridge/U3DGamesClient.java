@@ -15,7 +15,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.games.Games;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,24 +24,26 @@ import com.tinylabproductions.tlplib.IActivityWithResultTracker;
 import com.tinylabproductions.tlplib.UnityActivity;
 
 public class U3DGamesClient {
-  public static final String TAG = "U3DGamesClient";
-  public static final String GPGS = "Google Play Game Services";
+  private static final String TAG = "U3DGamesClient";
+  private static final String GPGS = "Google Play Game Services";
 
   private final int playServicesSupported;
   private final GoogleSignInClient client;
   private final Activity activity;
-  public final ConnectionCallbacks connectionCallbacks;
+  private final ConnectionCallbacks connectionCallbacks;
   private final int signInCode, achievementsCode, leaderboardCode;
-  private final ActivityResultTracker tracker;
   private Boolean checkedConnectionOnce = false;
 
-  public U3DGamesClient(final ConnectionCallbacks connectionCallbacks) throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+  public U3DGamesClient(final ConnectionCallbacks connectionCallbacks)
+    throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException
+  {
     activity = (Activity) Class.forName("com.unity3d.player.UnityPlayer").getField("currentActivity").get(null);
-    tracker = ((IActivityWithResultTracker) activity).getTracker();
+    ActivityResultTracker tracker = ((IActivityWithResultTracker) activity).getTracker();
     signInCode = tracker.generateRequestCode();
     achievementsCode = tracker.generateRequestCode();
     leaderboardCode = tracker.generateRequestCode();
     this.connectionCallbacks = connectionCallbacks;
+
 
     playServicesSupported =
       GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity);
@@ -68,6 +69,7 @@ public class U3DGamesClient {
 
           Log.d(TAG, "GoogleSignInStatusCodes " + code);
           if (result.isSuccess()) {
+            setViewForPopups(result.getSignInAccount());
             connectionCallbacks.onSignIn();
           } else {
             if (code == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
@@ -93,43 +95,39 @@ public class U3DGamesClient {
     });
   }
 
-  private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-    try {
-      GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-      // Signed in successfully
-      connectionCallbacks.onSignIn();
-    } catch (ApiException e) {
-      // The ApiException status code indicates the detailed failure reason.
-      // Please refer to the GoogleSignInStatusCodes class reference for more information.
-      Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
-      connectionCallbacks.onSignInFailed();
-    }
-  }
-
   public void connect() {
     Log.d(TAG, "connect()");
     signInSilently();
   }
 
+  private void setViewForPopups(GoogleSignInAccount signInAccount) {
+    Games
+      .getGamesClient(activity, signInAccount)
+      .setViewForPopups(activity.findViewById(android.R.id.content));
+  }
+
   // https://developers.google.com/games/services/android/signin
   private void signInSilently() {
-    GoogleSignInClient signInClient = GoogleSignIn.getClient(activity, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+    final GoogleSignInClient signInClient =
+      GoogleSignIn.getClient(activity, GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN);
+
     signInClient.silentSignIn().addOnCompleteListener(activity,
-            new OnCompleteListener<GoogleSignInAccount>() {
-              @Override
-              public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
-                Log.d(TAG, "signInSilently successful " + task.isSuccessful());
-                if (task.isSuccessful()) {
-                  // The signed in account is stored in the task's result.
-                  GoogleSignInAccount signedInAccount = task.getResult();
-                  connectionCallbacks.onSignIn();
-                } else {
-                  // Player will need to sign-in explicitly using via UI
-                  Intent signInIntent = client.getSignInIntent();
-                  activity.startActivityForResult(signInIntent, signInCode);
-                }
-              }
-            });
+      new OnCompleteListener<GoogleSignInAccount>() {
+        @Override
+        public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
+          Log.d(TAG, "signInSilently successful " + task.isSuccessful());
+          if (task.isSuccessful()) {
+            // The signed in account is stored in the task's result.
+            GoogleSignInAccount signedInAccount = task.getResult();
+            setViewForPopups(signedInAccount);
+            connectionCallbacks.onSignIn();
+          } else {
+            // Player will need to sign-in explicitly using via UI
+            Intent signInIntent = client.getSignInIntent();
+            activity.startActivityForResult(signInIntent, signInCode);
+          }
+        }
+      });
   }
 
   public boolean isSupported() {
