@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using com.tinylabproductions.TLPLib.Concurrent;
+using com.tinylabproductions.TLPLib.Functional;
+using UnityEngine;
 
 namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   public interface IGpsBinding {
@@ -6,7 +8,7 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     void showLeaderboard(LeaderboardId id);
     void submitAchievement(AchievementId id);
     void showAchievements();
-
+    Future<Unit> signedIn { get; }
   }
   public class GpsBinding {
     public static readonly IGpsBinding instance =

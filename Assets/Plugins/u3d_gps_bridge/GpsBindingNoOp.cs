@@ -1,8 +1,12 @@
-﻿using com.tinylabproductions.TLPLib.Logger;
+﻿using com.tinylabproductions.TLPLib.Concurrent;
+using com.tinylabproductions.TLPLib.Functional;
+using com.tinylabproductions.TLPLib.Logger;
 
 namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   public class GpsBindingNoOp : IGpsBinding {
     public static readonly IGpsBinding instance = new GpsBindingNoOp();
+    public Future<Unit> signedIn => Future<Unit>.unfulfilled;
+    
     GpsBindingNoOp() {}
 
     public void submitScore(LeaderboardId id, float score) {

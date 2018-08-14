@@ -32,19 +32,14 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       }
     }
 
-    public bool connected => onAndroidPlatform && client.Call<bool>("isConnected");
+    public bool signedIn => onAndroidPlatform && client.Call<bool>("signedIn");
     public bool supported => serviceStatus == ServiceStatus.Supported;
 
-    public void connect() => onAndroid(() => client.Call("connect"));
+    public void signIn() => onAndroid(() => client.Call("signIn"));
 
     public void submitScore(string leaderboardId, long value) =>
       onAndroid(() => client.Call("submitScore", leaderboardId, value));
 
-    /** 
-     * Unlocks achievement asynchronously. If there's no network connectivity, 
-     * game services tries to resubmit this achievement later. You can treat this
-     * operation as always successful. ??????????????????????????????????????????
-     **/
     public void unlockAchievement(string achievementId) =>
       onAndroid(() => client.Call("unlockAchievement", achievementId));
 

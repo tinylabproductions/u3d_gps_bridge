@@ -101,8 +101,8 @@ public class U3DGamesClient {
     });
   }
 
-  public void connect() {
-    Log.log(Log.DEBUG, TAG, "connect()");
+  public void signIn() {
+    Log.log(Log.DEBUG, TAG, "signIn()");
     signInSilently();
   }
 
@@ -160,7 +160,7 @@ public class U3DGamesClient {
     return playServicesSupported == ConnectionResult.SERVICE_INVALID;
   }
 
-  public boolean isConnected() {
+  public boolean signedIn() {
     return GoogleSignIn.getLastSignedInAccount(activity) != null;
   }
 
