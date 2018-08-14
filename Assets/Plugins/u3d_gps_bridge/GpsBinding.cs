@@ -9,6 +9,8 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     void submitAchievement(AchievementId id);
     void showAchievements();
     Future<Unit> signedIn { get; }
+    Future<Unit> firsTimeTriedToSignIn { get; }
+    Future<ConnectionCallbacks.SignInResult> onSignIn { get; }
   }
   public class GpsBinding {
     public static readonly IGpsBinding instance =

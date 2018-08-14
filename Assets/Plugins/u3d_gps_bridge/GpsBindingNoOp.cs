@@ -6,7 +6,9 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
   public class GpsBindingNoOp : IGpsBinding {
     public static readonly IGpsBinding instance = new GpsBindingNoOp();
     public Future<Unit> signedIn => Future<Unit>.unfulfilled;
-    
+    public Future<Unit> firsTimeTriedToSignIn => Future<Unit>.unfulfilled;
+    public Future<ConnectionCallbacks.SignInResult> onSignIn => Future<ConnectionCallbacks.SignInResult>.unfulfilled;
+
     GpsBindingNoOp() {}
 
     public void submitScore(LeaderboardId id, float score) {
