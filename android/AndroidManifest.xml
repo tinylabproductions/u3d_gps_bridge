@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.tinylab.gpsbridge">
+  <application>
+    <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="\%%GOOGLE-PLAY-SERVICES-ID%%" />
+  </application>
+</manifest>
