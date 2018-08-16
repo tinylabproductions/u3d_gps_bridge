@@ -3,6 +3,8 @@ using com.tinylabproductions.TLPLib.Functional;
 using UnityEngine;
 
 namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
+  public enum GooglePlayServicesSignInResult : byte { Success, Fail, Cancel }
+
   public interface IGpsBinding {
     void submitScore(LeaderboardId id, float score);
     void showLeaderboard(LeaderboardId id);
@@ -10,7 +12,7 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     void showAchievements();
     Future<Unit> signedIn { get; }
     Future<Unit> firsTimeTriedToSignIn { get; }
-    Future<ConnectionCallbacks.SignInResult> onSignIn { get; }
+    Future<GooglePlayServicesSignInResult> onSignIn { get; }
   }
   public class GpsBinding {
     public static readonly IGpsBinding instance =

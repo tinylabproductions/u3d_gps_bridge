@@ -30,27 +30,23 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
    *    Debug.Log(Loom.Current); // Initialize Loom
    **/
   public class ConnectionCallbacks : AndroidJavaProxy {
-    public ConnectionCallbacks() : 
-    base("com.tinylabproductions.u3d_gps_bridge.ConnectionCallbacks")
-    {}
-
-    public enum SignInResult { Success, Fail, Cancel }
+    public ConnectionCallbacks() : base("com.tinylabproductions.u3d_gps_bridge.ConnectionCallbacks") { }
 
     public Action OnNetworkFailure = delegate {};
 
     // Called when client disconnects from google play services.
     public Action OnDisconnected = delegate {};
 
-    public Action<SignInResult> OnSignIn = delegate {};
+    public Action<GooglePlayServicesSignInResult> OnSignIn = delegate {};
 
 
     /** Java interface methods **/
 
     void onNetworkFailure() { OnNetworkFailure.Invoke(); }
     void onDisconnected() { OnDisconnected.Invoke(); }
-    void onSignIn() { OnSignIn.Invoke(SignInResult.Success); }
-    void onSignInFailed() { OnSignIn.Invoke(SignInResult.Fail); }
-    void onSignInCanceled() { OnSignIn.Invoke(SignInResult.Cancel); }
+    void onSignIn() { OnSignIn.Invoke(GooglePlayServicesSignInResult.Success); }
+    void onSignInFailed() { OnSignIn.Invoke(GooglePlayServicesSignInResult.Fail); }
+    void onSignInCanceled() { OnSignIn.Invoke(GooglePlayServicesSignInResult.Cancel); }
   }
 }
 #endif

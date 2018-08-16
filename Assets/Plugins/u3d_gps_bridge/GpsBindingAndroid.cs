@@ -13,25 +13,25 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
     public static readonly IGpsBinding instance = new GpsBindingAndroid();
 
     public Future<Unit> signedIn =>
-      _onSignIn.filter(result => result == ConnectionCallbacks.SignInResult.Success).map(_ => F.unit);
+      _onSignIn.filter(result => result == GooglePlayServicesSignInResult.Success).map(_ => F.unit);
 
     public Future<Unit> firsTimeTriedToSignIn =>
       timesTriedToSignIn.filter(value => value == 1u).toFuture().map(_ => F.unit);
 
-    public Future<ConnectionCallbacks.SignInResult> onSignIn => _onSignIn;
+    public Future<GooglePlayServicesSignInResult> onSignIn => _onSignIn;
 
     // When targeted audience includes kids silentSignIn by default must be disabled.
     // It could only be enabled when user takes action which needs GPS. For example to view leaderboards or achievements.
     readonly PrefVal<bool> silentSignInEnabled = PrefVal.player.boolean("silent_sign_in_enabled", false);
     readonly PrefVal<uint> timesTriedToSignIn = PrefVal.player.uinteger("google_play_services_times_tried_sign_in", 0u);
-    readonly Future<ConnectionCallbacks.SignInResult> _onSignIn;
+    readonly Future<GooglePlayServicesSignInResult> _onSignIn;
     readonly Client client = new Client();
 
     GpsBindingAndroid() {
-      _onSignIn = Future.a<ConnectionCallbacks.SignInResult>(p => {
+      _onSignIn = Future.a<GooglePlayServicesSignInResult>(p => {
         if (Application.platform == RuntimePlatform.Android)
           client.callbacks.OnSignIn += result => ASync.OnMainThread(() => {
-            silentSignInEnabled.value = result == ConnectionCallbacks.SignInResult.Success;
+            silentSignInEnabled.value = result == GooglePlayServicesSignInResult.Success;
             p.tryComplete(result);
 
             if (Log.d.isDebug()) Log.d.debug($"{nameof(GpsBindingAndroid)} Gps signed in with result {result}");
@@ -65,8 +65,8 @@ namespace com.tinylabproductions.TLPGame.u3d_gps_bridge {
       else {
         signIn();
 
-        void onSignIn(ConnectionCallbacks.SignInResult result) {
-          if (result == ConnectionCallbacks.SignInResult.Success) act();
+        void onSignIn(GooglePlayServicesSignInResult result) {
+          if (result == GooglePlayServicesSignInResult.Success) act();
           client.callbacks.OnSignIn -= onSignIn;
         }
 
